@@ -6,7 +6,7 @@ if [ "$EUID" -ne 0 ]; then
 	exit 1
 fi
 
-INSTALLER=""
+INSTALLER="https://github.com/0x9090/PrestaShopPackage/raw/master/prestashop_1.7.7.5.zip"
 
 # ---- Set up Iptables ---- #
 #iptables -P INPUT ACCEPT
@@ -32,9 +32,7 @@ curl -o /etc/apt/trusted.gpg.d/php.gpg https://packages.sury.org/php/apt.gpg
 curl -o /etc/apt/trusted.gpg.d/mariadb.asc https://mariadb.org/mariadb_release_signing_key.asc
 apt update
 apt install nginx -y
-apt install php7.4 php7.4-fpm mariadb-server mariadb-client -y
-rm -rf prestashop/
-unzip -o prestashop_*.zip -d prestashop
+apt install php7.4 php7.4-fpm php7.4-zip php7.4-xml php7.4-curl php7.4-gd php7.4-mysql php7.4-intl mariadb-server mariadb-client -y
 
 # ---- Set up Database ---- #
 if [ ! -f ~/mariadb_root_pw ]; then
@@ -56,32 +54,46 @@ if [ ! -f ~/prestashop_db_pw ]; then
 fi
 
 # ---- Set up Nginx ---- #
+mkdir -p /var/log/nginx/
 mkdir -p /etc/nginx/sites-available/
-mkdir -p /etc/nginx/sites-enabled/
-rm -rf /etc/nginx/sites-enabled/*
+rm -rf /etc/nginx/conf.d/*
+chmod 775 /run/php/php7.4-fpm.sock
+chown www-data:www-data /run/php/php7.4-fpm.sock
+usermod -a -G www-data nginx
 cat > /etc/nginx/sites-available/prestashop.conf<< EOF
 server {
-	listen 0.0.0.0:80 default_server;
+	listen 80;
 	server_name shop.conceptarms.com;
-	access_log /var/log/nignx/access.log;
+	access_log /var/log/nginx/access.log;
 	error_log /var/log/nginx/error.log;
 	client_max_body_size 100M;
 	charset utf-8;
-	root /var/www;
+	root /var/www/;
 	index index.html index.php;
 	location / {
-		try_files $uri $uri/ =404;
+		try_files \$uri \$uri/ =404;
 	}
 	location ~ \.php$ {
-		include snippets/fastcgi-php.conf;
-		fastcgi_pass unix:/var/run/php/php7.4-fpm.sock;
+		include fastcgi_params;
+		fastcgi_intercept_errors on;
+		fastcgi_pass unix:/run/php/php7.4-fpm.sock;
+		fastcgi_param SCRIPT_FILENAME \$document_root/\$fastcgi_script_name;
+		fastcgi_connect_timeout 75;
+		fastcgi_read_timeout 1000;
+		fastcgi_send_timeout 1000;
 	}
 }
 EOF
-ln -s /etc/nginx/sites-available/prestashop.conf /etc/nginx/sites-enabled/prestashop.conf
+ln -s /etc/nginx/sites-available/prestashop.conf /etc/nginx/conf.d/prestashop.conf
 systemctl restart nginx.service
 
-# copy the unzipped presta shop to /var/www
-# restart nginxi
+# ---- Setup PrestaShop ---- #
+mkdir -p /var/www/
+rm -rf /var/www/*
+curl -L ${INSTALLER} --output ~/installer.zip
+unzip -o ~/installer.zip -d /var/www/
+chown -R www-data:www-data /var/www/
+chmod -R 774 /var/www/
+systemctl restart nginx.service
 
 # ---- TLS ---- #
