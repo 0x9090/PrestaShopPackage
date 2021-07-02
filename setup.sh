@@ -33,7 +33,7 @@ curl -o /etc/apt/trusted.gpg.d/php.gpg https://packages.sury.org/php/apt.gpg
 curl -o /etc/apt/trusted.gpg.d/mariadb.asc https://mariadb.org/mariadb_release_signing_key.asc
 apt update
 apt install nginx -y
-apt install php php-fpm php-zip php-xml php-curl php-gd php-mysql php-intl mariadb-server mariadb-client -y
+apt install php7.3 php7.3-fpm php7.3-zip php7.3-xml php7.3-curl php7.3-gd php7.3-mysql php7.3-intl mariadb-server mariadb-client -y
 
 # ---- Set up Database ---- #
 if [ ! -f ~/mariadb_root_pw ]; then
@@ -58,8 +58,8 @@ fi
 mkdir -p /var/log/nginx/
 mkdir -p /etc/nginx/sites-available/
 rm -rf /etc/nginx/conf.d/*
-chmod 775 /run/php/php7.4-fpm.sock
-chown www-data:www-data /run/php/php7.4-fpm.sock
+chmod 775 /run/php/php7.3-fpm.sock
+chown www-data:www-data /run/php/php7.3-fpm.sock
 usermod -a -G www-data nginx
 cat > /etc/nginx/sites-available/prestashop.conf<< EOF
 server {
@@ -77,7 +77,7 @@ server {
 	location ~ \.php$ {
 		include fastcgi_params;
 		fastcgi_intercept_errors on;
-		fastcgi_pass unix:/run/php/php7.4-fpm.sock;
+		fastcgi_pass unix:/run/php/php7.3-fpm.sock;
 		fastcgi_param SCRIPT_FILENAME \$document_root/\$fastcgi_script_name;
 		fastcgi_connect_timeout 75;
 		fastcgi_read_timeout 1000;
