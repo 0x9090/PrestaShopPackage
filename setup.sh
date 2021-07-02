@@ -33,7 +33,7 @@ curl -o /etc/apt/trusted.gpg.d/php.gpg https://packages.sury.org/php/apt.gpg
 curl -o /etc/apt/trusted.gpg.d/mariadb.asc https://mariadb.org/mariadb_release_signing_key.asc
 apt update
 apt install nginx -y
-apt install php7.3 php7.3-fpm php7.3-zip php7.3-xml php7.3-curl php7.3-gd php7.3-mysql php7.3-intl mariadb-server mariadb-client -y
+apt install php7.3 php7.3-fpm php7.3-zip php7.3-xml php7.3-curl php7.3-gd php7.3-mysql php7.3-intl php7.3-mbstring mariadb-server mariadb-client -y
 
 # ---- Set up Database ---- #
 if [ ! -f ~/mariadb_root_pw ]; then
