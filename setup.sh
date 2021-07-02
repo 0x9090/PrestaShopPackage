@@ -7,6 +7,7 @@ if [ "$EUID" -ne 0 ]; then
 fi
 
 INSTALLER="https://github.com/0x9090/PrestaShopPackage/raw/master/prestashop_1.7.7.5.zip"
+BUGFIX="https://github.com/0x9090/PrestaShopPackage/raw/master/v1.12.0-ps_facebook.zip"
 
 # ---- Set up Iptables ---- #
 #iptables -P INPUT ACCEPT
@@ -32,7 +33,7 @@ curl -o /etc/apt/trusted.gpg.d/php.gpg https://packages.sury.org/php/apt.gpg
 curl -o /etc/apt/trusted.gpg.d/mariadb.asc https://mariadb.org/mariadb_release_signing_key.asc
 apt update
 apt install nginx -y
-apt install php7.4 php7.4-fpm php7.4-zip php7.4-xml php7.4-curl php7.4-gd php7.4-mysql php7.4-intl mariadb-server mariadb-client -y
+apt install php php-fpm php-zip php-xml php-curl php-gd php-mysql php-intl mariadb-server mariadb-client -y
 
 # ---- Set up Database ---- #
 if [ ! -f ~/mariadb_root_pw ]; then
@@ -95,5 +96,18 @@ unzip -o ~/installer.zip -d /var/www/
 chown -R www-data:www-data /var/www/
 chmod -R 774 /var/www/
 systemctl restart nginx.service
-
+read -p "Do you want to apply the ps_facebook hotfix?" -n 1 -r
+echo
+if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+  curl -L ${BUGFIX} --output ~/ps_facebook.zip
+  rm -rf /var/www/modules/ps_facebook
+  unzip -o ~/ps_facebook.zip -d /var/www/modules/
+  rm ~/ps_facebook.zip
+fi
+read -p "Ready to delete the 'install' folder? Make sure to navigate to the /admin path to get the admin URL first." -n 1 -r
+echo
+if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+  rm -rf /var/www/install/
+  rm -rf /var/www/docs/
+fi
 # ---- TLS ---- #
