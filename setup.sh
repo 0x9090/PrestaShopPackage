@@ -7,7 +7,7 @@ if [ "$EUID" -ne 0 ]; then
 fi
 
 INSTALLER="https://github.com/0x9090/PrestaShopPackage/raw/master/prestashop_1.7.7.5.zip"
-BUGFIX="https://github.com/0x9090/PrestaShopPackage/raw/master/v1.12.0-ps_facebook.zip"
+ADMINFOLDER="admin3128ztahq"
 
 # ---- Set up Iptables ---- #
 #iptables -P INPUT ACCEPT
@@ -70,18 +70,125 @@ server {
 	client_max_body_size 100M;
 	charset utf-8;
 	root /var/www/;
-	index index.html index.php;
-	location / {
-		try_files \$uri \$uri/ =404;
-	}
+	index index.php;
+	error_page 404 /index.php?controller=404;
+	gzip on;
+	gzip_disable msie6;
+	gzip_vary on;
+	gzip_proxied any;
+	gzip_static on;
+	gzip_buffers 16 8k;
+	gzip_http_version 1.1;
+	gzip_comp_level 6;
+	gzip_min_length 1100;
+	gzip_disable "MSIE [1-6]\.(?!.*SV1)";
+	gzip_types
+    application/atom+xml
+    application/javascript
+    application/json
+    application/ld+json
+    application/manifest+json
+    application/rss+xml
+    application/vnd.geo+json
+    application/vnd.ms-fontobject
+    application/x-font-ttf
+    application/x-web-app-manifest+json
+    application/xhtml+xml
+    application/xml
+    font/opentype
+    image/bmp
+    image/svg+xml
+    image/x-icon
+    text/cache-manifest
+    text/css
+    text/plain
+    text/vcard
+    text/vnd.rim.location.xloc
+    text/vtt
+    text/x-component
+    text/x-cross-domain-policy;
+  location ~* \.(eot|otf|ttf|woff(?:2)?)$ {  # Cloudflare CDN fix
+    add_header Access-Control-Allow-Origin *;
+  }
+  location ~* \.(?:jpg|jpeg|gif|png|ico|css|woff2)$ {
+    expires 1M;
+    add_header Cache-Control "public";
+  }
+  location ~* \.pdf$ {
+    add_header Content-Disposition Attachment;
+    add_header X-Content-Type-Options nosniff;
+  }
+  location ~ ^/upload/ {
+    add_header Content-Disposition Attachment;
+    add_header X-Content-Type-Options nosniff;
+  }
+  location = /favicon.ico {
+    auth_basic off;
+    allow all;
+    log_not_found off;
+    access_log off;
+  }
+  location = /robots.txt {
+    auth_basic off;
+    allow all;
+    log_not_found off;
+    access_log off;
+  }
+  rewrite ^/([0-9])(-[_a-zA-Z0-9-]*)?(-[0-9]+)?/.+.jpg$ /img/p/$1/$1$2$3.jpg last;
+  rewrite ^/([0-9])([0-9])(-[_a-zA-Z0-9-]*)?(-[0-9]+)?/.+.jpg$ /img/p/$1/$2/$1$2$3$4.jpg last;
+  rewrite ^/([0-9])([0-9])([0-9])(-[_a-zA-Z0-9-]*)?(-[0-9]+)?/.+.jpg$ /img/p/$1/$2/$3/$1$2$3$4$5.jpg last;
+  rewrite ^/([0-9])([0-9])([0-9])([0-9])(-[_a-zA-Z0-9-]*)?(-[0-9]+)?/.+.jpg$ /img/p/$1/$2/$3/$4/$1$2$3$4$5$6.jpg last;
+  rewrite ^/([0-9])([0-9])([0-9])([0-9])([0-9])(-[_a-zA-Z0-9-]*)?(-[0-9]+)?/.+.jpg$ /img/p/$1/$2/$3/$4/$5/$1$2$3$4$5$6$7.jpg last;
+  rewrite ^/([0-9])([0-9])([0-9])([0-9])([0-9])([0-9])(-[_a-zA-Z0-9-]*)?(-[0-9]+)?/.+.jpg$ /img/p/$1/$2/$3/$4/$5/$6/$1$2$3$4$5$6$7$8.jpg last;
+  rewrite ^/([0-9])([0-9])([0-9])([0-9])([0-9])([0-9])([0-9])(-[_a-zA-Z0-9-]*)?(-[0-9]+)?/.+.jpg$ /img/p/$1/$2/$3/$4/$5/$6/$7/$1$2$3$4$5$6$7$8$9.jpg last;
+  rewrite ^/([0-9])([0-9])([0-9])([0-9])([0-9])([0-9])([0-9])([0-9])(-[_a-zA-Z0-9-]*)?(-[0-9]+)?/.+.jpg$ /img/p/$1/$2/$3/$4/$5/$6/$7/$8/$1$2$3$4$5$6$7$8$9$10.jpg last;
+  rewrite ^/c/([0-9]+)(-[.*_a-zA-Z0-9-]*)(-[0-9]+)?/.+.jpg$ /img/c/$1$2$3.jpg last;
+  rewrite ^/c/([a-zA-Z_-]+)(-[0-9]+)?/.+.jpg$ /img/c/$1$2.jpg last;
+  rewrite ^images_ie/?([^/]+)\.(jpe?g|png|gif)$ js/jquery/plugins/fancybox/images/$1.$2 last;
+  rewrite ^/api/?(.*)$ /webservice/dispatcher.php?url=$1 last;
+  rewrite ^(/install(?:-dev)?/sandbox)/(.*) /$1/test.php last;
+  location /$(ADMINFOLDER)/ {  # Change this block to your admin folder
+    if (!-e $request_filename) {
+      rewrite ^/.*$ /$(ADMINFOLDER)/index.php last;
+    }
+  }
+  location ~ /\. {
+    deny all;
+  }
+  location ~ ^/(app|bin|cache|classes|config|controllers|docs|localization|override|src|tests|tests-legacy|tools|translations|travis-scripts|vendor|var)/ {
+    deny all;
+  }
+  location ~ ^/modules/.*/vendor/ {
+    deny all;
+  }
+  location ~ \.(yml|log|tpl|twig|sass)$ {
+    deny all;
+  }
+  location /upload {
+    location ~ \.php$ {
+      deny all;
+    }
+  }
+  location /img {
+    location ~ \.php$ {
+      deny all;
+    }
+  }
 	location ~ \.php$ {
+	  try_files $fastcgi_script_name /index.php$uri&$args =404;
+	  fastcgi_index  index.php;
+    fastcgi_split_path_info ^(.+\.php)(/.+)$;
 		include fastcgi_params;
+		fastcgi_param PATH_INFO       $fastcgi_path_info;
+    fastcgi_param PATH_TRANSLATED $document_root$fastcgi_path_info;
+    fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
 		fastcgi_intercept_errors on;
 		fastcgi_pass unix:/run/php/php7.3-fpm.sock;
-		fastcgi_param SCRIPT_FILENAME \$document_root/\$fastcgi_script_name;
 		fastcgi_connect_timeout 75;
+		fastcgi_keep_conn on;
 		fastcgi_read_timeout 1000;
 		fastcgi_send_timeout 1000;
+		client_max_body_size 10M;
 	}
 }
 EOF
@@ -96,13 +203,15 @@ unzip -o ~/installer.zip -d /var/www/
 chown -R www-data:www-data /var/www/
 chmod -R 774 /var/www/
 systemctl restart nginx.service
+echo -e "PrestaShop DB User: prestashop\nPassword:$(cat ~/prestashop_db_pw)"
 read -p "Do you want to apply the ps_facebook hotfix?" -n 1 -r
 echo
 if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-  curl -L ${BUGFIX} --output ~/ps_facebook.zip
-  rm -rf /var/www/modules/ps_facebook
+  curl -L "https://github.com/0x9090/PrestaShopPackage/raw/master/v1.12.0-ps_facebook.zip" --output ~/ps_facebook.zip
+  rm -rf /var/www/modules/ps_facebook/
   unzip -o ~/ps_facebook.zip -d /var/www/modules/
-  rm ~/ps_facebook.zip
+  #rm ~/ps_facebook.zip
+  echo "Fixed"
 fi
 read -p "Ready to delete the 'install' folder? Make sure to navigate to the /admin path to get the admin URL first." -n 1 -r
 echo
@@ -110,4 +219,6 @@ if [[ ! $REPLY =~ ^[Yy]$ ]]; then
   rm -rf /var/www/install/
   rm -rf /var/www/docs/
 fi
+chown -R www-data:www-data /var/www/
+chmod -R 774 /var/www/
 # ---- TLS ---- #
