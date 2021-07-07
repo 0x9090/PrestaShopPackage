@@ -6,6 +6,12 @@ if [ "$EUID" -ne 0 ]; then
 	exit 1
 fi
 
+# ===========================================================================
+# This is not functional until I can add dynamic detection of the ADMINFOLDER
+# My test one is hardcoded here, but will be replaced in a later version
+# Stay tuned
+# ===========================================================================
+
 INSTALLER="https://github.com/0x9090/PrestaShopPackage/raw/master/prestashop_1.7.7.5.zip"
 ADMINFOLDER="admin3128ztahq"
 
